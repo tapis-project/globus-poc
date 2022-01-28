@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
-  title: Tapis Globus Prxy API
-  description: The Tapis Systems API provides for management of Tapis Systems including permissions, credentials and Scheduler Profiles.
-  version: '1.1.0'
+  title: Tapis Globus Proxy API
+  description: The Tapis Globus Proxy API proxies calls to Globus coming from a Tapis service.
+  version: '0.0.1'
   termsOfService: "https://tapis-project.org"
   contact:
-    name: "Systems API - CICSupport"
+    name: "Tapis Globux Proxy API - CICSupport"
     url: "https://tapis-project.org"
     email: "cicsupport@tacc.utexas.edu"
   license:
@@ -25,23 +25,19 @@ security:
   - TapisJWT: []
 tags:
   - name: General
-    description: General service health and readiness
-  - name: Systems
-    description: Manage Tapis system resources. Create, retrieve, update, etc.
-  - name: Credentials
-    description: Manage Tapis system user access credentials. Create, update, remove, etc.
-  - name: Permissions
-    description: Manage Tapis permissions for system resources. Grant, revoke and retrieve.
-  - name: Scheduler Profiles
-    description: Manage Tapis scheduler profile resources. Create, retrieve and delete.
+    description: General service health
+  - name: Auth
+    description: Manage Globus authorization related actions.
+  - name: Transfers
+    description: Manage file transfers. Initiate, cancel and retrieve status.
 
 # ------------------------------------------------------------------------------
 # --- Paths -------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 paths:
 
-  # --- Paths for /systems -----------------------------------------------------
-  '/v3/systems/healthcheck':
+  # --- Paths for General -----------------------------------------------------
+  '/v3/globus-proxy/healthcheck':
     get:
       tags:
         - General
@@ -56,22 +52,75 @@ paths:
                 $ref: '#/components/schemas/RespBasic'
         '500':
           description: Server error.
-  '/v3/systems/readycheck':
+
+  # --- Paths for Auth -----------------------------------------------------
+  '/v3/globus-proxy/auth/authUrl/{clientId}':
     get:
       tags:
-        - General
-      description: Ready check.
-      operationId: readyCheck
+        - Auth
+      description: |
+        Given a Globus Client ID return the authorization URL that can be used by an end-user to
+        authenticate and obtain a *Native App Authorization Code*.
+      operationId: getAuthUrl
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ClientIdString'
       responses:
         '200':
-          description: Service ready.
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespUrl'
+        '500':
+          description: Server error.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-        '503':
-          description: Service unavailable.
+  '/v3/globus-proxy/auth/accessTokens/${authCode}':
+    get:
+      tags:
+        - Auth
+      description: |
+        Exchange a Globus *Native App Authorization Code* for access and refresh tokens.
+      operationId: getAuthTokens
+      parameters:
+        - name: authCode
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/AuthCodeString'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespAccessTokens'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
 
+
+
+
+
+
+
+
+
+
+
+
+
+  # --- Paths for Transfers -----------------------------------------------------
   '/v3/systems':
     get:
       tags:
@@ -1656,6 +1705,14 @@ components:
           default: ""
 
     # --- String types with constraints ------------------------------------
+    ClientIdString:
+      type: string
+      example: "0259148a-8ae0-44b7-80b5-a4060e92dd3e"
+      minLength: 1
+    AuthCodeString:
+      type: string
+      example: "T0aymuUlUyLaOvvR58xxDCzycq5Cd3"
+      minLength: 1
     HostString:
       type: string
       minLength: 1
@@ -2077,7 +2134,7 @@ components:
         changes:
           type: integer
           format: int32
-    RespResourceUrl:
+    RespUrl:
       type: object
       properties:
         status:
@@ -2087,14 +2144,58 @@ components:
         version:
           type: string
         result:
-          $ref: '#/components/schemas/ResultResourceUrl'
+          $ref: '#/components/schemas/ResultUrl'
         metadata:
           type: object
-    ResultResourceUrl:
+    ResultUrl:
       type: object
       properties:
         url:
           type: string
+    RespAccessTokens:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        result:
+          $ref: '#/components/schemas/ResultAccessTokens'
+        metadata:
+          type: object
+    ResultAccessTokens:
+      type: object
+      properties:
+        aBool:
+          type: boolean?????????
+#Please enter the code you get after login here: T0aymuUlUyLaOovR58xxDCzycq3Cd3
+#token_response:
+#  ============================================================================================
+#  {
+#    "auth.globus.org": {
+#      "scope": "email profile openid",
+#      "access_token": "AgYO4by6BKBjlBNmOVq2JMyJv2Pdn6qd1VKaYj4nYlyk1NpKKJsWCD1dJBl1JD50OrpN2B4lBBBwO2CVM7J36hrvDwSweNqc5Jzb",
+#      "refresh_token": "Agjdle1w1VVvxdPlmq9zOGOaBlzYjGe5YYbmz0belBrkbaMPePIKUQJwylP5DekYKvOWgly82V95b61OnDy0gjV7dWy05",
+#      "token_type": "Bearer",
+#      "expires_at_seconds": 1643577990,
+#      "resource_server": "auth.globus.org"
+#    },
+#    "transfer.api.globus.org": {
+#      "scope": "urn:globus:auth:scope:transfer.api.globus.org:all",
+#      "access_token": "Ag4g5YoNM9Q6lzJ8BwOaOoYOg8Jk0MWY32Ma9NY44ynnGbJKeqf7C86d0zpPmbzj1ezr2laxjgvjJNTjrMWzvIYNQ3",
+#      "refresh_token": "AgeXpvEnovWX2M4XdXVVJv59jazn72YvvnMyj4kKG6x2qp4ovOiqUMD8eJ2Ny2kNyr9jlXJQ47pO7wNkbl8oJBMvWw9P7",
+#      "token_type": "Bearer",
+#      "expires_at_seconds": 1643577990,
+#      "resource_server": "transfer.api.globus.org"
+#    }
+#  }
+#  ============================================================================================
+
+
+
+
     RespSystem:
       type: object
       properties:
