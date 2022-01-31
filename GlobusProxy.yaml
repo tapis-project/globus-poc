@@ -28,6 +28,13 @@ tags:
     description: General service health
   - name: Auth
     description: Manage Globus authorization related actions.
+#  - name: Submission
+#TODO/TBD: Needed? probably not, build it into the delete operation and the various txfr operations
+#    description: Obtain a submission id that can be used for an asynchronous transfer or delete request.
+# NOTE: probably best to have delete be a synchronous call, submission and monitoring of the delete
+#       request probably best handled in the python based service.
+  - name: File Operations
+    description: Manage file resources. Operations supported are list, mkdir, rename and delete
   - name: Transfers
     description: Manage file transfers. Initiate, cancel and retrieve status.
 
@@ -54,7 +61,14 @@ paths:
           description: Server error.
 
   # --- Paths for Auth -----------------------------------------------------
-  '/v3/globus-proxy/auth/authUrl/{clientId}':
+  '/v3/globus-proxy/auth/url/{clientId}':
+# Python SDK:
+#import globus_sdk
+#CLIENT_ID = "0259148a-8ae0-44b7-80b5-a4060e22223e"
+#client = globus_sdk.NativeAppAuthClient(CLIENT_ID)
+#client.oauth2_start_flow(refresh_tokens=True)
+#authorize_url = client.oauth2_get_authorize_url()
+#print("Please go to this URL and login: {0}".format(authorize_url))
     get:
       tags:
         - Auth
@@ -75,19 +89,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespUrl'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
         '500':
           description: Server error.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-  '/v3/globus-proxy/auth/accessTokens/${authCode}':
+  '/v3/globus-proxy/auth/tokens/${authCode}':
+# Python SDK:
+#auth_code = input("Please enter the code you get after login here: ").strip()
+#token_response = client.oauth2_exchange_code_for_tokens(auth_code)
+#globus_transfer_data = token_response.by_resource_server["transfer.api.globus.org"]
+#TRANSFER_ACCESS_TOKEN = globus_transfer_data["access_token"]
+#TRANSFER_REFRESH_TOKEN = globus_transfer_data["refresh_token"]
     get:
       tags:
         - Auth
       description: |
         Exchange a Globus *Native App Authorization Code* for access and refresh tokens.
-      operationId: getAuthTokens
+      operationId: getTokens
       parameters:
         - name: authCode
           in: path
@@ -100,7 +126,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RespAccessTokens'
+                $ref: '#/components/schemas/RespAuthTokens'
         '500':
           description: Server error.
           content:
@@ -108,13 +134,180 @@ paths:
               schema:
                 $ref: '#/components/schemas/RespBasic'
 
-
-
-
-
-
-
-
+  # --- Paths for File Operations -----------------------------------------------------
+  '/v3/globus-proxy/ops/{endpointId}/{path}':
+    get:
+      tags:
+        - File Operations
+      summary: List files for endpoint at given path.
+      description: |
+        List files for an endpoint at given path relative to the default directory of the endpoint.
+      operationId: listFiles
+      parameters:
+        - name: endpointId
+          in: path
+          description: Endpoint ID
+          required: true
+          schema:
+            type: string
+          example: "0259148a-8ae0-44b7-80b5-a4060e92de3e"
+        - name: path
+          in: path
+          description: Path relative to default directory of the endpoint
+          required: true
+          schema:
+            type: string
+          example: "/dirA/dirB/"
+        - name: recurse
+          in: query
+          description: recursive listing
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: A list of files
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileListingResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+    delete:
+      tags:
+        - File Operations
+      summary: Delete a file or directory on endpoint at path relative to default directory.
+      description: |
+        Delete a file or directory at path {path} relative to the default directory.
+# NOTE: In globus this is an asynchronous call. See if it makes sense for proxy to handle it as synchronous
+      operationId: delete
+      parameters:
+        - name: endpointId
+          in: path
+          description: Endpoint ID
+          required: true
+          schema:
+            type: string
+          example: "0259148a-8ae0-44b7-80b5-a4060e92de3e"
+        - name: path
+          in: path
+          description: Path relative to default directory of the endpoint
+          required: true
+          schema:
+            type: string
+          example: "/dirA/dirB/"
+        - name: recurse
+          in: query
+          description: remove the directory and all subdirectories
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+  '/v3/globus-proxy/ops/{endpointId}/mkdir':
+    post:
+      tags:
+        - File Operations
+      summary: Create a directory
+      description: |
+        Create a directory on the endpoint. Path is relative to the endpoint default directory.
+        Path must be specified in the request body.
+      operationId: makeDir
+      parameters:
+        - name: endpointId
+          in: path
+          description: Endpoint ID
+          required: true
+          schema:
+            type: string
+          example: "0259148a-8ae0-44b7-80b5-a4060e92de3e"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqMakeDir'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+  '/v3/globus-proxy/ops/{endpointId}/rename':
+    post:
+      tags:
+        - File Operations
+      summary: Rename a file or directory
+      description: |
+        Rename a file or directory on the endpoint. Paths are relative to the endpoint default directory.
+        Source and destination paths must be specified in the request body.
+        When renaming to a different parent directory, the parent directory of the new path must already exist.
+      operationId: makeDir
+      parameters:
+        - name: endpointId
+          in: path
+          description: Endpoint ID
+          required: true
+          schema:
+            type: string
+          example: "0259148a-8ae0-44b7-80b5-a4060e92de3e"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqRename'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '404':
+          description: Source path not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
 
 
 
@@ -1749,6 +1942,35 @@ components:
     # -------------------------------------------------------------------------
     # --- Request objects -----------------------------------------------------
     # -------------------------------------------------------------------------
+    ReqMakeDir:
+      required:
+        - path
+      type: object
+      properties:
+        path:
+          pattern: ^(?!.*\.\.).*
+          type: string
+          example: "/dirA/dirB"
+    ReqRename:
+      required:
+        - source_path
+        - destination_path
+      type: object
+      properties:
+        source_path:
+          pattern: ^(?!.*\.\.).*
+          type: string
+          example: "/dirA/file_old.txt"
+        destination_path:
+          pattern: ^(?!.*\.\.).*
+          type: string
+          example: "/dirA/file_new.txt"
+
+
+
+
+
+
     ReqPostSystem:
       type: object
       required:
@@ -2152,7 +2374,7 @@ components:
       properties:
         url:
           type: string
-    RespAccessTokens:
+    RespAuthTokens:
       type: object
       properties:
         status:
@@ -2162,14 +2384,16 @@ components:
         version:
           type: string
         result:
-          $ref: '#/components/schemas/ResultAccessTokens'
+          $ref: '#/components/schemas/ResultAuthTokens'
         metadata:
           type: object
-    ResultAccessTokens:
+    ResultAuthTokens:
       type: object
       properties:
-        aBool:
-          type: boolean?????????
+        access_token:
+          type: string
+        refresh_token:
+          type: string
 #Please enter the code you get after login here: T0aymuUlUyLaOovR58xxDCzycq3Cd3
 #token_response:
 #  ============================================================================================
@@ -2192,6 +2416,44 @@ components:
 #    }
 #  }
 #  ============================================================================================
+    RespFileList:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultFileInfo'
+        version:
+          type: string
+        metadata:
+          type: object
+    ResultFileInfo:
+      type: object
+      properties:
+        type:
+          type: string
+        user:
+          type: string
+        group:
+          type: string
+        permissions:
+          type: string
+        lastModified:
+          type: string
+          format: date-time
+        name:
+          type: string
+        path:
+          type: string
+        size:
+          type: integer
+          description: size in bytes
+          format: int64
+
 
 
 
