@@ -5,6 +5,10 @@ let branch_name = urlParms.has('branch') ? urlParms.get('branch') : 'local';
 // list of APIS
 var apis = [
     {
+        name: 'Apps',
+        url: 'https://raw.githubusercontent.com/tapis-project/openapi-apps/' + branch_name + '/AppsAPI.yaml'
+    },
+    {
         name: 'Globus-Proxy',
         url: 'https://raw.githubusercontent.com/tapis-project/openapi-globus-proxy/' + branch_name + '/GlobusProxyAPI.yaml'
     }
