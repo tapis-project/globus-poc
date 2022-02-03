@@ -225,7 +225,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FileListingResponse'
+                $ref: '#/components/schemas/RespFileList'
         '404':
           description: Not Found
           content:
@@ -350,7 +350,7 @@ paths:
         Source and destination paths must be specified in the request body.
         When renaming to a different parent directory, the parent directory of the new path must already exist.
         Access and refresh tokens must be provided as query parameters.
-      operationId: makeDir
+      operationId: renamePath
       parameters:
         - name: endpoint_id
           in: path
@@ -445,7 +445,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
-  '/v3/globus-proxy/transfers/{transfer_id}':
+  '/v3/globus-proxy/transfers/{task_id}':
     get:
       tags:
         - Transfers
@@ -499,231 +499,258 @@ components:
     # ------------------------------------------------------------------------------
     # --- Model objects ------------------------------------------------------------
     # ------------------------------------------------------------------------------
-    # --- TapisSystem ------------------------------------------------------------------
-    TapisSystem:
+    # --- AuthTokens -------------------------------------------------------------
+    AuthTokens:
+      required:
+        - access_token
+        - refresh_token
       type: object
       properties:
-        tenant:
+        access_token:
           type: string
-        id:
-          $ref: '#/components/schemas/IdString'
-        description:
-          $ref: '#/components/schemas/DescriptionString'
-        systemType:
-          $ref: '#/components/schemas/SystemTypeEnum'
-        owner:
-          $ref: '#/components/schemas/UserNameApiDefaultString'
-        host:
-          $ref: '#/components/schemas/HostString'
-        enabled:
-          type: boolean
-          default: true
-        effectiveUserId:
-          $ref: '#/components/schemas/UserNameApiDefaultString'
-        defaultAuthnMethod:
-          $ref: '#/components/schemas/AuthnEnum'
-        authnCredential:
-          $ref: '#/components/schemas/Credential'
-        bucketName:
+        refresh_token:
           type: string
-        rootDir:
-          $ref: '#/components/schemas/DirString'
-        port:
+    #Please enter the code you get after login here: T0aymuUlUyLaOovR58xxDCzycq3Cd3
+    #token_response:
+    #  ============================================================================================
+    #  {
+    #    "auth.globus.org": {
+    #      "scope": "email profile openid",
+    #      "access_token": "AgYO4by6BKBjlBNmOVq2JMyJv2Pdn6qd1VKaYj4nYlyk1NpKKJsWCD1dJBl1JD50OrpN2B4lBBBwO2CVM7J36hrvDwSweNqc5Jzb",
+    #      "refresh_token": "Agjdle1w1VVvxdPlmq9zOGOaBlzYjGe5YYbmz0belBrkbaMPePIKUQJwylP5DekYKvOWgly82V95b61OnDy0gjV7dWy05",
+    #      "token_type": "Bearer",
+    #      "expires_at_seconds": 1643577990,
+    #      "resource_server": "auth.globus.org"
+    #    },
+    #    "transfer.api.globus.org": {
+    #      "scope": "urn:globus:auth:scope:transfer.api.globus.org:all",
+    #      "access_token": "Ag4g5YoNM9Q6lzJ8BwOaOoYOg8Jk0MWY32Ma9NY44ynnGbJKeqf7C86d0zpPmbzj1ezr2laxjgvjJNTjrMWzvIYNQ3",
+    #      "refresh_token": "AgeXpvEnovWX2M4XdXVVJv59jazn72YvvnMyj4kKG6x2qp4ovOiqUMD8eJ2Ny2kNyr9jlXJQ47pO7wNkbl8oJBMvWw9P7",
+    #      "token_type": "Bearer",
+    #      "expires_at_seconds": 1643577990,
+    #      "resource_server": "transfer.api.globus.org"
+    #    }
+    #  }
+    #  ============================================================================================
+    # --- FileInfo -------------------------------------------------------------
+    FileInfo:
+      type: object
+      properties:
+        type:
+          type: string
+        user:
+          type: string
+        group:
+          type: string
+        permissions:
+          type: string
+        last_modified:
+          type: string
+          format: date-time
+        name:
+          type: string
+        path:
+          type: string
+        size:
           type: integer
-          format: int32
-        useProxy:
-          type: boolean
-          default: false
-        proxyHost:
-          $ref: '#/components/schemas/HostString'
-        proxyPort:
-          type: integer
-          format: int32
-        dtnSystemId:
-          $ref: '#/components/schemas/IdString'
-        dtnMountPoint:
+          description: size in bytes
+    # --- TransferItem -------------------------------------------------------------
+    TransferItem:
+      required:
+        - source_path
+        - destination_path
+        - recursive
+      type: object
+      properties:
+        source_path:
           type: string
-        dtnMountSourcePath:
+        destination_path:
           type: string
-        isDtn:
+        recursive:
           type: boolean
-          default: false
-        canExec:
-          type: boolean
-        canRunBatch:
-          type: boolean
-          default: false
-        mpiCmd:
+          description: "Must be true for a directory path and false for a file."
+    # --- TransferTask -------------------------------------------------------------
+    TransferTask:
+      type: object
+      properties:
+        bytes_transferred:
+          type: integer
+        completion_time:
           type: string
-          minLength: 1
-          maxLength: 126
-        jobRuntimes:
-          type: array
-          minItems: 1
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/JobRuntime'
-        jobWorkingDir:
-          $ref: '#/components/schemas/DirString'
-        jobEnvVariables:
-          type: array
-          items:
-            $ref: '#/components/schemas/KeyValuePair'
-        jobMaxJobs:
+        deadline:
+          type: string
+        destination_endpoint_display_name:
+          type: string
+          example: "my-connect-personal-laptop"
+        destination_endpoint_id:
+          type: string
+          example: "4544fddc-7941-113c-9f32-ed182a728dff"
+        directories:
           type: integer
-          default: 2147483647
-        jobMaxJobsPerUser:
+        effective_bytes_per_second:
           type: integer
-          default: 2147483647
-        batchScheduler:
-          $ref: '#/components/schemas/SchedulerTypeEnum'
-        batchLogicalQueues:
-          type: array
-          items:
-            $ref: '#/components/schemas/LogicalQueue'
-        batchDefaultLogicalQueue:
-          $ref: '#/components/schemas/QueueNameString'
-        batchSchedulerProfile:
-          $ref: '#/components/schemas/IdString'
-        jobCapabilities:
-          type: array
-          items:
-            $ref: '#/components/schemas/Capability'
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/TagString'
-        notes:
+        encrypt_data:
+          type: boolean
+        fail_on_quota_errors:
+          type: boolean
+        fatal_error:
           type: object
-        importRefId:
-          type: string
-        uuid:
-          type: string
-          format: uuid
-        deleted:
+        faults:
+          type: integer
+        files:
+          type: integer
+        files_skipped:
+          type: integer
+        files_transferred:
+          type: integer
+        history_deleted:
           type: boolean
-        created:
+        is_ok:
+          type: boolean
+        is_paused:
+          type: boolean
+        label:
           type: string
-        updated:
+        owner_id:
           type: string
-    # --- JobRuntime ------------------------------------------------------------------
-    JobRuntime:
-      type: object
-      required:
-        - runtimeType
-      properties:
-        runtimeType:
-          $ref: '#/components/schemas/RuntimeTypeEnum'
-        version:
+        request_time:
           type: string
-    # --- SchedulerProfile ------------------------------------------------------------------
-    SchedulerProfile:
-      type: object
-      required:
-        - name
-        - moduleLoadCommand
-      properties:
-        tenant:
+        skip_source_errors:
+          type: boolean
+        source_endpoint_display_name:
           type: string
-        name:
-          $ref: '#/components/schemas/IdString'
-        description:
-          $ref: '#/components/schemas/DescriptionString'
-        owner:
-          $ref: '#/components/schemas/UserNameApiDefaultString'
-        moduleLoadCommand:
+          example: "Globus Tutorial Endpoint 1"
+        source_endpoint_id:
           type: string
-          minLength: 1
-        modulesToLoad:
-          type: array
-          items:
-            type: string
-            minLength: 1
-        hiddenOptions:
-          type: array
-          items:
-            $ref: '#/components/schemas/SchedulerHiddenOptionEnum'
-    # --- LogicalQueue ------------------------------------------------------------------
-    LogicalQueue:
-      type: object
-      required:
-        - name
-        - hpcQueueName
-      properties:
-        name:
-          $ref: '#/components/schemas/QueueNameString'
-        hpcQueueName:
-          $ref: '#/components/schemas/QueueNameString'
-        maxJobs:
+          example: "ddb59aef-6d04-11e5-ba46-22000b92c6ec"
+        status:
+          $ref: '#/components/schemas/GlobusTaskStatusEnum'
+        symlinks:
           type: integer
-          default: 2147483647
-        maxJobsPerUser:
+        sync_level:
           type: integer
-          default: 2147483647
-        minNodeCount:
-          type: integer
-        maxNodeCount:
-          type: integer
-        minCoresPerNode:
-          type: integer
-        maxCoresPerNode:
-          type: integer
-        minMemoryMB:
-          type: integer
-        maxMemoryMB:
-          type: integer
-        minMinutes:
-          type: integer
-        maxMinutes:
-          type: integer
-    # --- Capability ------------------------------------------------------------------
-    Capability:
-      type: object
-      required:
-        - category
-        - name
-        - datatype
-      properties:
-        category:
-          $ref: '#/components/schemas/CategoryEnum'
-        name:
+        task_id:
           type: string
-        datatype:
-          $ref: '#/components/schemas/DatatypeEnum'
-        precedence:
-          type: integer
-        value:
-          type: string
-    # --- Credential ------------------------------------------------------------------
-    Credential:
-      type: object
-      properties:
-        authnMethod:
-          $ref: '#/components/schemas/AuthnEnum'
-        password:
-          type: string
-        privateKey:
-          type: string
-        publicKey:
-          type: string
-        accessKey:
-          type: string
-        accessSecret:
-          type: string
-        certificate:
-          type: string
-    # --- KeyValuePair -------------------------------------------------------
-    KeyValuePair:
-      type: object
-      required:
-        - key
-      properties:
-        key:
-          type: string
-          minLength: 1
-        value:
-          type: string
-          default: ""
+          example: "36ccfc18-8493-11ec-9008-3132d806a822"
+        type:
+          $ref: '#/components/schemas/GlobusTaskTypeEnum'
+        verify_checksum:
+          type: boolean
+    # TRANSFER TASK
+    #
+    #  {
+    #    "DATA_TYPE": "task",
+    #    "bytes_checksummed": 0,
+    #    "bytes_transferred": 0,
+    #    "canceled_by_admin": null,
+    #    "canceled_by_admin_message": null,
+    #    "command": "API 0.10",
+    #    "completion_time": null,
+    #    "deadline": "2022-02-04T01:47:16+00:00",
+    #    "delete_destination_extra": false,
+    #    "destination_endpoint": "u_jcvcz2azvnh5tjtduh2oagvezq#4549fadc-7941-11ec-9f32-ed182a728dff",
+    #    "destination_endpoint_display_name": "scblack-test-laptop",
+    #    "destination_endpoint_id": "4549fadc-7941-11ec-9f32-ed182a728dff",
+    #    "directories": 0,
+    #    "effective_bytes_per_second": 0,
+    #    "encrypt_data": false,
+    #    "fail_on_quota_errors": false,
+    #    "fatal_error": null,
+    #    "faults": 0,
+    #    "files": 3,
+    #    "files_skipped": 0,
+    #    "files_transferred": 0,
+    #    "filter_rules": null,
+    #    "history_deleted": false,
+    #    "is_ok": true,
+    #    "is_paused": false,
+    #    "label": "",
+    #    "nice_status": "OK",
+    #    "nice_status_details": null,
+    #    "nice_status_expires_in": -1,
+    #    "nice_status_short_description": "OK",
+    #    "owner_id": "48aa2ce8-19ab-4fd9-a663-a1f4e01aa4cc",
+    #    "preserve_timestamp": false,
+    #    "recursive_symlinks": "ignore",
+    #    "request_time": "2022-02-03T01:47:16+00:00",
+    #    "skip_source_errors": false,
+    #    "source_endpoint": "go#ep1",
+    #    "source_endpoint_display_name": "Globus Tutorial Endpoint 1",
+    #    "source_endpoint_id": "ddb59aef-6d04-11e5-ba46-22000b92c6ec",
+    #    "status": "ACTIVE",
+    #    "subtasks_canceled": 0,
+    #    "subtasks_expired": 0,
+    #    "subtasks_failed": 0,
+    #    "subtasks_pending": 3,
+    #    "subtasks_retrying": 0,
+    #    "subtasks_skipped_errors": 0,
+    #    "subtasks_succeeded": 3,
+    #    "subtasks_total": 6,
+    #    "symlinks": 0,
+    #    "sync_level": 1,
+    #    "task_id": "36ccfc18-8493-11ec-9008-3132d806a822",
+    #    "type": "TRANSFER",
+    #    "username": "u_jcvcz2azvnh5tjtduh2oagvezq",
+    #    "verify_checksum": false
+    #  }
+    #
+    # DELETE TASK
+    #
+    #  {
+    #    "DATA_TYPE": "task",
+    #    "bytes_checksummed": 0,
+    #    "bytes_transferred": 0,
+    #    "canceled_by_admin": null,
+    #    "canceled_by_admin_message": null,
+    #    "command": "API 0.10",
+    #    "completion_time": null,
+    #    "deadline": "2022-02-04T02:11:58+00:00",
+    #    "delete_destination_extra": false,
+    #    "destination_endpoint": null,
+    #    "destination_endpoint_display_name": null,
+    #    "destination_endpoint_id": null,
+    #    "directories": 0,
+    #    "effective_bytes_per_second": 0,
+    #    "encrypt_data": false,
+    #    "fail_on_quota_errors": false,
+    #    "fatal_error": null,
+    #    "faults": 0,
+    #    "files": 1,
+    #    "files_skipped": 0,
+    #    "files_transferred": 0,
+    #    "filter_rules": null,
+    #    "history_deleted": false,
+    #    "is_ok": true,
+    #    "is_paused": false,
+    #    "label": null,
+    #    "nice_status": "Queued",
+    #    "nice_status_details": null,
+    #    "nice_status_expires_in": -1,
+    #    "nice_status_short_description": "Queued",
+    #    "owner_id": "48aa2ce8-19ab-4fd9-a663-a1f4e01aa4cc",
+    #    "preserve_timestamp": false,
+    #    "recursive_symlinks": null,
+    #    "request_time": "2022-02-03T02:11:58+00:00",
+    #    "skip_source_errors": false,
+    #    "source_endpoint": "u_jcvcz2azvnh5tjtduh2oagvezq#4549fadc-7941-11ec-9f32-ed182a728dff",
+    #    "source_endpoint_display_name": "scblack-test-laptop",
+    #    "source_endpoint_id": "4549fadc-7941-11ec-9f32-ed182a728dff",
+    #    "status": "ACTIVE",
+    #    "subtasks_canceled": 0,
+    #    "subtasks_expired": 0,
+    #    "subtasks_failed": 0,
+    #    "subtasks_pending": 1,
+    #    "subtasks_retrying": 0,
+    #    "subtasks_skipped_errors": 0,
+    #    "subtasks_succeeded": 0,
+    #    "subtasks_total": 1,
+    #    "symlinks": 0,
+    #    "sync_level": null,
+    #    "task_id": "aa4d6148-8496-11ec-9008-3132d806a822",
+    #    "type": "DELETE",
+    #    "username": "u_jcvcz2azvnh5tjtduh2oagvezq",
+    #    "verify_checksum": false
+    #  }
 
     # --- String types with constraints ------------------------------------
     ClientIdString:
@@ -737,38 +764,6 @@ components:
     TaskIdString:
       type: string
       minLength: 1
-    HostString:
-      type: string
-      minLength: 1
-      maxLength: 256
-    IdString:
-      type: string
-      minLength: 1
-      maxLength: 80
-    UserNameString:
-      type: string
-      minLength: 1
-      maxLength: 60
-    UserNameApiDefaultString:
-      type: string
-      minLength: 1
-      maxLength: 60
-      default: "${apiUserId}"
-    DescriptionString:
-      type: string
-      maxLength: 2048
-    DirString:
-      type: string
-      minLength: 1
-      maxLength: 4096
-    TagString:
-      type: string
-      minLength: 1
-      maxLength: 128
-    QueueNameString:
-      type: string
-      minLength: 1
-      maxLength: 128
 
     # -------------------------------------------------------------------------
     # --- Request objects -----------------------------------------------------
@@ -796,323 +791,16 @@ components:
           pattern: ^(?!.*\.\.).*
           type: string
           example: "/dirA/file_new.txt"
-
-
-
-
-
-
-    ReqPostSystem:
-      type: object
+    ReqCreateTransfer:
       required:
-        - id
-        - systemType
-        - host
-        - defaultAuthnMethod
-        - canExec
+        - transfer_items
+      type: object
       properties:
-        id:
-          $ref: '#/components/schemas/IdString'
-        description:
-          $ref: '#/components/schemas/DescriptionString'
-        systemType:
-          $ref: '#/components/schemas/SystemTypeEnum'
-        owner:
-          type: string
-        host:
-          $ref: '#/components/schemas/HostString'
-        enabled:
-          type: boolean
-          default: true
-        effectiveUserId:
-          $ref: '#/components/schemas/UserNameString'
-        defaultAuthnMethod:
-          $ref: '#/components/schemas/AuthnEnum'
-        authnCredential:
-          $ref: '#/components/schemas/ReqPostCredential'
-        bucketName:
-          type: string
-        rootDir:
-          $ref: '#/components/schemas/DirString'
-        port:
-          type: integer
-          format: int32
-        useProxy:
-          type: boolean
-          default: false
-        proxyHost:
-          $ref: '#/components/schemas/HostString'
-        proxyPort:
-          type: integer
-          format: int32
-        dtnSystemId:
-          $ref: '#/components/schemas/IdString'
-        dtnMountPoint:
-          type: string
-        dtnMountSourcePath:
-          type: string
-        isDtn:
-          type: boolean
-          default: false
-        canExec:
-          type: boolean
-        canRunBatch:
-          type: boolean
-          default: false
-        mpiCmd:
-          type: string
-          minLength: 1
-          maxLength: 126
-        jobRuntimes:
+        transfer_items:
           type: array
           minItems: 1
           items:
-            $ref: '#/components/schemas/JobRuntime'
-        jobWorkingDir:
-          $ref: '#/components/schemas/DirString'
-        jobEnvVariables:
-          type: array
-          items:
-            $ref: '#/components/schemas/KeyValuePair'
-        jobMaxJobs:
-          type: integer
-        jobMaxJobsPerUser:
-          type: integer
-        batchScheduler:
-          $ref: '#/components/schemas/SchedulerTypeEnum'
-        batchLogicalQueues:
-          type: array
-          items:
-            $ref: '#/components/schemas/LogicalQueue'
-        batchDefaultLogicalQueue:
-          $ref: '#/components/schemas/QueueNameString'
-        batchSchedulerProfile:
-          $ref: '#/components/schemas/IdString'
-        jobCapabilities:
-          type: array
-          items:
-            $ref: '#/components/schemas/Capability'
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/TagString'
-        notes:
-          type: object
-        importRefId:
-          type: string
-    ReqPutSystem:
-      type: object
-      properties:
-        description:
-          $ref: '#/components/schemas/DescriptionString'
-        host:
-          $ref: '#/components/schemas/HostString'
-        effectiveUserId:
-          $ref: '#/components/schemas/UserNameString'
-        defaultAuthnMethod:
-          $ref: '#/components/schemas/AuthnEnum'
-        authnCredential:
-          $ref: '#/components/schemas/ReqPostCredential'
-        port:
-          type: integer
-          format: int32
-        useProxy:
-          type: boolean
-          default: false
-        proxyHost:
-          $ref: '#/components/schemas/HostString'
-        proxyPort:
-          type: integer
-          format: int32
-        dtnSystemId:
-          $ref: '#/components/schemas/IdString'
-        dtnMountPoint:
-          type: string
-        dtnMountSourcePath:
-          type: string
-        canRunBatch:
-          type: boolean
-          default: false
-        mpiCmd:
-          type: string
-          minLength: 1
-          maxLength: 126
-        jobRuntimes:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/JobRuntime'
-        jobWorkingDir:
-          $ref: '#/components/schemas/DirString'
-        jobEnvVariables:
-          type: array
-          items:
-            $ref: '#/components/schemas/KeyValuePair'
-        jobMaxJobs:
-          type: integer
-        jobMaxJobsPerUser:
-          type: integer
-        batchScheduler:
-          $ref: '#/components/schemas/SchedulerTypeEnum'
-        batchLogicalQueues:
-          type: array
-          items:
-            $ref: '#/components/schemas/LogicalQueue'
-        batchDefaultLogicalQueue:
-          $ref: '#/components/schemas/QueueNameString'
-        batchSchedulerProfile:
-          $ref: '#/components/schemas/IdString'
-        jobCapabilities:
-          type: array
-          items:
-            $ref: '#/components/schemas/Capability'
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/TagString'
-        notes:
-          type: object
-        importRefId:
-          type: string
-    ReqPatchSystem:
-      type: object
-      properties:
-        description:
-          $ref: '#/components/schemas/DescriptionString'
-        host:
-          $ref: '#/components/schemas/HostString'
-        effectiveUserId:
-          $ref: '#/components/schemas/UserNameString'
-        defaultAuthnMethod:
-          $ref: '#/components/schemas/AuthnEnum'
-        port:
-          type: integer
-          format: int32
-        useProxy:
-          type: boolean
-        proxyHost:
-          $ref: '#/components/schemas/HostString'
-        proxyPort:
-          type: integer
-          format: int32
-        dtnSystemId:
-          $ref: '#/components/schemas/IdString'
-        dtnMountPoint:
-          type: string
-        dtnMountSourcePath:
-          type: string
-        canRunBatch:
-          type: boolean
-        mpiCmd:
-          type: string
-          minLength: 1
-          maxLength: 126
-        jobRuntimes:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/JobRuntime'
-        jobWorkingDir:
-          $ref: '#/components/schemas/DirString'
-        jobEnvVariables:
-          type: array
-          items:
-            $ref: '#/components/schemas/KeyValuePair'
-        jobMaxJobs:
-          type: integer
-        jobMaxJobsPerUser:
-          type: integer
-        batchScheduler:
-          $ref: '#/components/schemas/SchedulerTypeEnum'
-        batchLogicalQueues:
-          type: array
-          items:
-            $ref: '#/components/schemas/LogicalQueue'
-        batchDefaultLogicalQueue:
-          $ref: '#/components/schemas/QueueNameString'
-        batchSchedulerProfile:
-          $ref: '#/components/schemas/IdString'
-        jobCapabilities:
-          type: array
-          items:
-            $ref: '#/components/schemas/Capability'
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/TagString'
-        notes:
-          type: object
-        importRefId:
-          type: string
-    ReqPostCredential:
-      type: object
-      properties:
-        password:
-          type: string
-        privateKey:
-          type: string
-        publicKey:
-          type: string
-        accessKey:
-          type: string
-        accessSecret:
-          type: string
-        certificate:
-          type: string
-    ReqPerms:
-      type: object
-      required:
-        - permissions
-      properties:
-        permissions:
-          type: array
-          minItems: 1
-          items:
-            type: string
-    ReqSearchSystems:
-      type: object
-      required:
-        - search
-      properties:
-        search:
-          type: array
-          minItems: 1
-          items:
-            type: string
-    ReqMatchConstraints:
-      type: object
-      required:
-        - match
-      properties:
-        match:
-          type: array
-          minItems: 1
-          items:
-            type: string
-    ReqPostSchedulerProfile:
-      type: object
-      required:
-        - name
-        - moduleLoadCommand
-      properties:
-        name:
-          $ref: '#/components/schemas/IdString'
-        description:
-          $ref: '#/components/schemas/DescriptionString'
-        owner:
-          type: string
-        moduleLoadCommand:
-          type: string
-          minLength: 1
-        modulesToLoad:
-          type: array
-          items:
-            type: string
-            minLength: 1
-        hiddenOptions:
-          type: array
-          items:
-            $ref: '#/components/schemas/SchedulerHiddenOptionEnum'
+            $ref: '#/components/schemas/TransferItem'
 
     # -------------------------------------------------------------------------
     # --- Response objects ----------------------------------------------------
@@ -1130,63 +818,6 @@ components:
           type: object
         metadata:
           type: object
-    RespBoolean:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        result:
-          $ref: '#/components/schemas/ResultBoolean'
-        metadata:
-          type: object
-    ResultBoolean:
-      type: object
-      properties:
-        aBool:
-          type: boolean
-    RespNameArray:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        result:
-          $ref: '#/components/schemas/ResultNameArray'
-        metadata:
-          type: object
-    ResultNameArray:
-      type: object
-      properties:
-        names:
-          type: array
-          items:
-            type: string
-    RespChangeCount:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        result:
-          $ref: '#/components/schemas/ResultChangeCount'
-        metadata:
-          type: object
-    ResultChangeCount:
-      type: object
-      properties:
-        changes:
-          type: integer
-          format: int32
     RespUrl:
       type: object
       properties:
@@ -1215,38 +846,9 @@ components:
         version:
           type: string
         result:
-          $ref: '#/components/schemas/ResultAuthTokens'
+          $ref: '#/components/schemas/AuthTokens'
         metadata:
           type: object
-    ResultAuthTokens:
-      type: object
-      properties:
-        access_token:
-          type: string
-        refresh_token:
-          type: string
-#Please enter the code you get after login here: T0aymuUlUyLaOovR58xxDCzycq3Cd3
-#token_response:
-#  ============================================================================================
-#  {
-#    "auth.globus.org": {
-#      "scope": "email profile openid",
-#      "access_token": "AgYO4by6BKBjlBNmOVq2JMyJv2Pdn6qd1VKaYj4nYlyk1NpKKJsWCD1dJBl1JD50OrpN2B4lBBBwO2CVM7J36hrvDwSweNqc5Jzb",
-#      "refresh_token": "Agjdle1w1VVvxdPlmq9zOGOaBlzYjGe5YYbmz0belBrkbaMPePIKUQJwylP5DekYKvOWgly82V95b61OnDy0gjV7dWy05",
-#      "token_type": "Bearer",
-#      "expires_at_seconds": 1643577990,
-#      "resource_server": "auth.globus.org"
-#    },
-#    "transfer.api.globus.org": {
-#      "scope": "urn:globus:auth:scope:transfer.api.globus.org:all",
-#      "access_token": "Ag4g5YoNM9Q6lzJ8BwOaOoYOg8Jk0MWY32Ma9NY44ynnGbJKeqf7C86d0zpPmbzj1ezr2laxjgvjJNTjrMWzvIYNQ3",
-#      "refresh_token": "AgeXpvEnovWX2M4XdXVVJv59jazn72YvvnMyj4kKG6x2qp4ovOiqUMD8eJ2Ny2kNyr9jlXJQ47pO7wNkbl8oJBMvWw9P7",
-#      "token_type": "Bearer",
-#      "expires_at_seconds": 1643577990,
-#      "resource_server": "transfer.api.globus.org"
-#    }
-#  }
-#  ============================================================================================
     RespFileList:
       type: object
       properties:
@@ -1257,33 +859,11 @@ components:
         result:
           type: array
           items:
-            $ref: '#/components/schemas/ResultFileInfo'
+            $ref: '#/components/schemas/FileInfo'
         version:
           type: string
         metadata:
           type: object
-    ResultFileInfo:
-      type: object
-      properties:
-        type:
-          type: string
-        user:
-          type: string
-        group:
-          type: string
-        permissions:
-          type: string
-        lastModified:
-          type: string
-          format: date-time
-        name:
-          type: string
-        path:
-          type: string
-        size:
-          type: integer
-          description: size in bytes
-          format: int64
     RespTransferTask:
       type: object
       properties:
@@ -1294,111 +874,22 @@ components:
         version:
           type: string
         result:
-          $ref: '#/components/schemas/ResultTransferTask'
+          $ref: '#/components/schemas/TransferTask'
         metadata:
           type: object
-    ResultTransferTask:
-      type: object
-      properties:
-?        ?????
-        access_token:
-          type: string
-        refresh_token:
-          type: string
 
-
-
-
-
-    RespSystem:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        result:
-          $ref: '#/components/schemas/TapisSystem'
-        metadata:
-          type: object
-    RespSystems:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        result:
-          type: array
-          items:
-            $ref: '#/components/schemas/TapisSystem'
-        metadata:
-          type: object
-          properties:
-            recordCount:
-              type: integer
-            recordLimit:
-              type: integer
-            recordsSkipped:
-              type: integer
-            orderBy:
-              type: string
-            startAfter:
-              type: string
-            totalCount:
-              type: integer
-    RespCredential:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        result:
-          $ref: '#/components/schemas/Credential'
-        metadata:
-          type: object
-    RespSchedulerProfile:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        result:
-          $ref: '#/components/schemas/SchedulerProfile'
-        metadata:
-          type: object
-    RespSchedulerProfiles:
-      type: object
-      properties:
-        status:
-          type: string
-        message:
-          type: string
-        version:
-          type: string
-        result:
-          type: array
-          items:
-            $ref: '#/components/schemas/SchedulerProfile'
-        metadata:
-          type: object
     # -------------------------------------------------------------------------
     # --- Enums ---------------------------------------------------------------
     # -------------------------------------------------------------------------
-    SystemTypeEnum:
+    GlobusTaskTypeEnum:
       type: string
       enum:
-        - LINUX
-        - S3
-        - IRODS
-        - GLOBUS
+        - TRANSFER
+        - DELETE
+    GlobusTaskStatusEnum:
+      type: string
+      enum:
+        - ACTIVE
+        - INACTIVE
+        - SUCCEEDED
+        - FAILED
