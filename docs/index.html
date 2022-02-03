@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tapis APIs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script
+            src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+            integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8="
+            crossorigin="anonymous"></script>
+<!--    <script src="https://cdn.jsdelivr.net/npm/foundation-sites@6.5.3/dist/js/foundation.min.js" crossorigin="anonymous"></script>-->
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+<!--    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/foundation-sites@6.5.3/dist/css/foundation.min.css"  crossorigin="anonymous">-->
+    <style>
+      body {
+        margin: 0;
+        padding-top: 40px;
+        font-family: 'Roboto', sans-serif;
+      }
+
+      nav {
+        padding-left: 10px;
+        position: fixed;
+        top: 0;
+        width: 100%;
+        z-index: 100;
+        display: flex;
+        flex-grow: 1;
+        align-items: center;
+        background-color: #0b485b;
+      }
+      #links_container {
+          margin: 0;
+          padding: 0;
+      }
+
+      #links_container li {
+          display: inline-block;
+          padding: 10px;
+          color: white;
+          cursor: pointer;
+          /*border-right: 1px solid #fff;*/
+      }
+
+      #links_container li:hover {
+        color: #d3d3d3;
+      }
+
+    </style>
+  </head>
+  <body>
+
+    <!-- Top navigation placeholder -->
+    <nav>
+      <div>
+        <a href="https://tapis.io" target="_blank">
+          <img src="tapis-logo.png" height="75px">
+        </a>
+      </div>
+      <div>
+        <ul id="links_container">
+        </ul>
+      </div>
+    </nav>
+
+    <redoc scroll-y-offset="body > nav"></redoc>
+
+    <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"> </script>
+    <script src="globus-proxy-live-docs.js"></script>
+
+
+    </script>
+  </body>
+</html>
