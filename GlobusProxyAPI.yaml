@@ -490,7 +490,8 @@ paths:
         - Transfers
       summary: Cancel a transfer task
       description: |
-        Request that a transfer task be cancelled.
+        Request that a transfer task be cancelled. Note that even if the response indicates that the task has been
+        cancelled the task still may have succeeded. Task status must be checked. See Globus documentation.
       operationId: cancelTransferTask
       parameters:
         - name: task_id
