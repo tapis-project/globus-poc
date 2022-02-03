@@ -9,7 +9,11 @@ var apis = [
         url: 'https://raw.githubusercontent.com/tapis-project/openapi-apps/' + branch_name + '/AppsAPI.yaml'
     },
     {
-        name: 'Globus-Proxy',
+        name: 'Systems',
+        url: 'https://raw.githubusercontent.com/tapis-project/openapi-systems/' + branch_name + '/SystemsAPI.yaml'
+    },
+    {
+        name: 'GlobusProxy',
         url: 'https://raw.githubusercontent.com/tapis-project/openapi-globus-proxy/' + branch_name + '/GlobusProxyAPI.yaml'
     }
 ];
