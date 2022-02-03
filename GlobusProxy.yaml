@@ -67,7 +67,7 @@ paths:
     get:
       tags:
         - Auth
-      summary: Return authorization URL given a client Id.
+      summary: Return authorization URL given client Id
       description: |
         Given a Globus Client Id return the authorization URL that can be used by an end-user to
         authenticate and obtain a *Native App Authorization Code*.
@@ -107,7 +107,7 @@ paths:
     get:
       tags:
         - Auth
-      summary: Exchange authorization code for access and refresh tokens.
+      summary: Exchange authorization code for access and refresh tokens
       description: |
         Exchange a Globus *Native App Authorization Code* for a pair of access and refresh tokens.
       operationId: getTokens
@@ -136,7 +136,7 @@ paths:
     get:
       tags:
         - Auth
-      summary: Check token pair and refresh as needed for given endpoint.
+      summary: Check token pair and refresh as needed
       description: |
         Given an endpoint and a pair of tokens refresh the pair as needed. Return the refreshed token pair
         which may be the same as the provided pair.
@@ -181,7 +181,7 @@ paths:
     get:
       tags:
         - File Operations
-      summary: List files for endpoint at given path.
+      summary: List files at path
       description: |
         List files for an endpoint at given path relative to the default directory of the endpoint.
         Access and refresh tokens must be provided as query parameters.
@@ -241,9 +241,9 @@ paths:
     delete:
       tags:
         - File Operations
-      summary: Delete a file or directory on endpoint at path relative to default directory.
+      summary: Delete a path
       description: |
-        Delete a file or directory at path {path} relative to the default directory.
+        Delete a file or directory on an endpoint at path {path} relative to the default directory.
         Access and refresh tokens must be provided as query parameters.
       operationId: delete
       parameters:
@@ -344,7 +344,7 @@ paths:
     post:
       tags:
         - File Operations
-      summary: Rename a file or directory
+      summary: Rename a path
       description: |
         Rename a file or directory on the endpoint. Paths are relative to the endpoint default directory.
         Source and destination paths must be specified in the request body.
@@ -407,7 +407,7 @@ paths:
     post:
       tags:
         - Transfers
-      summary: Initiate a task to transfer files from one endpoint to another
+      summary: Create task to transfer paths from one endpoint to another
       description: |
         Create a task to transfer files from a source endpoint to a destination endpoint.
         File paths are relative to the endpoint default directories.
@@ -449,7 +449,7 @@ paths:
     get:
       tags:
         - Transfers
-      summary: Retrieve a transfer task given the task Id.
+      summary: Retrieve transfer task
       description: |
         Retrieve a transfer task given the task Id.
         Access and refresh tokens must be provided as query parameters.
@@ -479,6 +479,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespTransferTask'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+    delete:
+      tags:
+        - Transfers
+      summary: Cancel a transfer task
+      description: |
+        Request that a transfer task be cancelled.
+      operationId: cancelTransferTask
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/TaskIdString'
+        - name: access_token
+          in: query
+          description: Globus transfer access token
+          required: true
+          schema:
+            type: string
+        - name: refresh_token
+          in: query
+          description: Globus transfer refresh token
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cancel request submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespCancelTask'
         '500':
           description: Server error.
           content:
@@ -595,6 +633,11 @@ components:
           type: boolean
         fatal_error:
           type: object
+          properties:
+            code:
+              type: string
+            description:
+              type: string
         faults:
           type: integer
         files:
@@ -637,7 +680,6 @@ components:
         verify_checksum:
           type: boolean
     # TRANSFER TASK
-    #
     #  {
     #    "DATA_TYPE": "task",
     #    "bytes_checksummed": 0,
@@ -693,9 +735,7 @@ components:
     #    "username": "u_jcvcz2azvnh5tjtduh2oagvezq",
     #    "verify_checksum": false
     #  }
-    #
     # DELETE TASK
-    #
     #  {
     #    "DATA_TYPE": "task",
     #    "bytes_checksummed": 0,
@@ -751,6 +791,17 @@ components:
     #    "username": "u_jcvcz2azvnh5tjtduh2oagvezq",
     #    "verify_checksum": false
     #  }
+
+    # Example of fatal_error, task was cancelled before completing
+    # ...
+    #    "fail_on_quota_errors": false,
+    #    "fatal_error": {
+    #      "code": "CANCELED",
+    #      "description": "canceled"
+    #    },
+    #    "faults": 0,
+    #    "files": 0,
+    # ...
 
     # --- String types with constraints ------------------------------------
     ClientIdString:
@@ -877,6 +928,46 @@ components:
           $ref: '#/components/schemas/TransferTask'
         metadata:
           type: object
+    RespCancelTask:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        result:
+          $ref: '#/components/schemas/ResultCancelTask'
+        metadata:
+          type: object
+    ResultCancelTask:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/GlobusTaskCancelEnum'
+# CancelEnum
+#   COMPLETE - task was already done when request made.
+#     code = TaskComplete
+#   CANCELLED - request completed during call and task should no longer be ACTIVE.
+#             - note that task still may have completed successfully. Task status must be checked.
+#     code = Canceled
+#   ACCEPTED - request was accepted but did not complete during call.
+#     code = CancelAccepted
+#  {
+#    "DATA_TYPE": "result",
+#    "code": "Canceled",
+#    "message": "The task has been cancelled successfully.",
+#    "request_id": "4evUy9jR9",
+#    "resource": "/task/2eb8894a-8518-11ec-8fde-dfc5b31adbac/cancel"
+#  }
+#  {
+#    "DATA_TYPE": "result",
+#    "code": "TaskComplete",
+#    "message": "The task completed before the cancel request was processed.",
+#    "request_id": "cXIfEcTmw",
+#    "resource": "/task/2eb8894a-8518-11ec-8fde-dfc5b31adbac/cancel"
+#  }
 
     # -------------------------------------------------------------------------
     # --- Enums ---------------------------------------------------------------
@@ -893,3 +984,17 @@ components:
         - INACTIVE
         - SUCCEEDED
         - FAILED
+    GlobusTaskCancelEnum:
+      type: string
+      enum:
+        - COMPLETE
+        - CANCELLED
+        - ACCEPTED
+# CancelEnum
+#   COMPLETE - task was already done when request made.
+#     code = TaskComplete
+#   CANCELLED - request completed during call and task should no longer be ACTIVE.
+#             - note that task still may have completed successfully. Task status must be checked.
+#     code = Canceled
+#   ACCEPTED - request was accepted but did not complete during call.
+#     code = CancelAccepted
