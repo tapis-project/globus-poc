@@ -1,4 +1,4 @@
-# openapi-globus-proxy
+# openapi-globusproxy
 
 OpenAPI Specification for Tapis Globus Proxy Service
 
