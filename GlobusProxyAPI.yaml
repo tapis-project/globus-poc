@@ -207,12 +207,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: refresh_token
-          in: query
-          description: Globus transfer refresh token
-          required: true
-          schema:
-            type: string
         - name: recurse
           in: query
           description: recursive listing
@@ -267,12 +261,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: refresh_token
-          in: query
-          description: Globus transfer refresh token
-          required: true
-          schema:
-            type: string
         - name: recurse
           in: query
           description: remove the directory and all subdirectories
@@ -316,12 +304,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: refresh_token
-          in: query
-          description: Globus transfer refresh token
-          required: true
-          schema:
-            type: string
       requestBody:
         content:
           application/json:
@@ -362,12 +344,6 @@ paths:
         - name: access_token
           in: query
           description: Globus transfer access token
-          required: true
-          schema:
-            type: string
-        - name: refresh_token
-          in: query
-          description: Globus transfer refresh token
           required: true
           schema:
             type: string
@@ -421,12 +397,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: refresh_token
-          in: query
-          description: Globus transfer refresh token
-          required: true
-          schema:
-            type: string
       requestBody:
         content:
           application/json:
@@ -466,12 +436,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: refresh_token
-          in: query
-          description: Globus transfer refresh token
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: Success
@@ -505,12 +469,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: refresh_token
-          in: query
-          description: Globus transfer refresh token
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: Cancel request submitted
@@ -528,12 +486,6 @@ paths:
 # ------------------------------------------------------------------------------
 # --- Components ---------------------------------------------------------------
 components:
-  securitySchemes:
-    TapisJWT:
-      type: apiKey
-      description: Tapis signed JWT token authentication
-      name: X-Tapis-Token
-      in: header
   schemas:
     # ------------------------------------------------------------------------------
     # --- Model objects ------------------------------------------------------------
