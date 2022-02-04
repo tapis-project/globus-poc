@@ -86,7 +86,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RespUrl'
         '404':
-          description: Not Found
+          description: Client not found
           content:
             application/json:
               schema:
@@ -184,7 +184,7 @@ paths:
       summary: List files at path
       description: |
         List files for an endpoint at given path relative to the default directory of the endpoint.
-        Access and refresh tokens must be provided as query parameters.
+        Access token must be provided as a query parameter.
       operationId: listFiles
       parameters:
         - name: endpoint_id
@@ -220,12 +220,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespFileList'
+        '401':
+          description: Access token invalid. Please provide valid token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
         '404':
           description: Not Found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
+        '407':
+          description: Unable to activate one or more endpoints.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespEndpointArray'
         '500':
           description: Server error.
           content:
@@ -238,7 +250,7 @@ paths:
       summary: Delete a path
       description: |
         Delete a file or directory on an endpoint at path {path} relative to the default directory.
-        Access and refresh tokens must be provided as query parameters.
+        Access token must be provided as a query parameter.
       operationId: delete
       parameters:
         - name: endpoint_id
@@ -274,6 +286,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
+        '401':
+          description: Access token invalid. Please provide valid token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '407':
+          description: Unable to activate one or more endpoints.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespEndpointArray'
         '500':
           description: Server error.
           content:
@@ -288,7 +312,7 @@ paths:
       description: |
         Create a directory on the endpoint. Path is relative to the endpoint default directory.
         Path must be specified in the request body.
-        Access and refresh tokens must be provided as query parameters.
+        Access token must be provided as a query parameter.
       operationId: makeDir
       parameters:
         - name: endpoint_id
@@ -316,6 +340,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
+        '401':
+          description: Access token invalid. Please provide valid token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '407':
+          description: Unable to activate one or more endpoints.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespEndpointArray'
         '500':
           description: Server error.
           content:
@@ -331,7 +367,7 @@ paths:
         Rename a file or directory on the endpoint. Paths are relative to the endpoint default directory.
         Source and destination paths must be specified in the request body.
         When renaming to a different parent directory, the parent directory of the new path must already exist.
-        Access and refresh tokens must be provided as query parameters.
+        Access token must be provided as a query parameter.
       operationId: renamePath
       parameters:
         - name: endpoint_id
@@ -365,12 +401,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
+        '401':
+          description: Access token invalid. Please provide valid token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
         '404':
           description: Source path not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespBasic'
+        '407':
+          description: Unable to activate one or more endpoints.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespEndpointArray'
         '500':
           description: Server error.
           content:
@@ -388,7 +436,7 @@ paths:
         Create a task to transfer files from a source endpoint to a destination endpoint.
         File paths are relative to the endpoint default directories.
         Endpoints are activated as needed.
-        Access and refresh tokens must be provided as query parameters.
+        Access token must be provided as a query parameter.
       operationId: createTransferTask
       parameters:
         - name: access_token
@@ -409,6 +457,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespTransferTask'
+        '401':
+          description: Access token invalid. Please provide valid token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '407':
+          description: Unable to activate one or more endpoints.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespEndpointArray'
         '500':
           description: Server error.
           content:
@@ -422,7 +482,7 @@ paths:
       summary: Retrieve transfer task
       description: |
         Retrieve a transfer task given the task Id.
-        Access and refresh tokens must be provided as query parameters.
+        Access token must be provided as a query parameter.
       operationId: getTransferTask
       parameters:
         - name: task_id
@@ -443,6 +503,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespTransferTask'
+        '401':
+          description: Access token invalid. Please provide valid token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '407':
+          description: Unable to activate one or more endpoints.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespEndpointArray'
         '500':
           description: Server error.
           content:
@@ -476,6 +548,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RespCancelTask'
+        '401':
+          description: Access token invalid. Please provide valid token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespBasic'
+        '407':
+          description: Unable to activate one or more endpoints.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespEndpointArray'
         '500':
           description: Server error.
           content:
@@ -853,6 +937,26 @@ components:
           $ref: '#/components/schemas/AuthTokens'
         metadata:
           type: object
+    RespEndpointArray:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        version:
+          type: string
+        result:
+          $ref: '#/components/schemas/ResultEndpointArray'
+        metadata:
+          type: object
+    ResultEndpointArray:
+      type: object
+      properties:
+        names:
+          type: array
+          items:
+            type: string
     RespFileList:
       type: object
       properties:
