@@ -251,7 +251,7 @@ paths:
       description: |
         Delete a file or directory on an endpoint at path {path} relative to the default directory.
         Access token must be provided as a query parameter.
-      operationId: delete
+      operationId: deletePath
       parameters:
         - name: endpoint_id
           in: path
