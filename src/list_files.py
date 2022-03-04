@@ -11,6 +11,7 @@ from globus_sdk.exc import GlobusAPIError
 # Default directory /~/data/globus
 CLIENT_ID = "0259148a-8ae0-44b7-80b5-a4060e92dd3e"
 ENDPOINT_ID = "4549fadc-7941-11ec-9f32-ed182a728dff"
+TOKEN_FILE = "/home/scblack/.ssh/globus_tokens.json"
 
 # Code mostly taken from Globus python sdk examples
 
