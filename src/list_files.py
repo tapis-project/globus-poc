@@ -3,6 +3,7 @@
 
 import json
 import datetime
+import sys
 
 from globus_sdk import NativeAppAuthClient, RefreshTokenAuthorizer, TransferClient
 from globus_sdk.exc import GlobusAPIError
@@ -12,6 +13,7 @@ from globus_sdk.exc import GlobusAPIError
 CLIENT_ID = "0259148a-8ae0-44b7-80b5-a4060e92dd3e"
 ENDPOINT_ID = "4549fadc-7941-11ec-9f32-ed182a728dff"
 TOKEN_FILE = "/home/scblack/.ssh/globus_tokens.json"
+
 
 # Code mostly taken from Globus python sdk examples
 
@@ -57,7 +59,7 @@ def update_tokens_file_on_refresh(token_response):
 
 def main():
     # get/refresh the tokens
-    tokens = load_tokens_from_file("/home/scblack/.ssh/globus_tokens.json")
+    tokens = load_tokens_from_file(TOKEN_FILE)
     transfer_tokens = tokens["transfer.api.globus.org"]
     # Create the authorizer
     auth_client = NativeAppAuthClient(client_id=CLIENT_ID)
@@ -102,8 +104,29 @@ def main():
     # EP_DIR = "/~/data/globus"
     ep_dir = ep["default_directory"]
     # list files
-    print("Listing files for endpoint:" + ENDPOINT_ID + " path: " + ep_dir)
-    for fentry in transfer_client.operation_ls(ENDPOINT_ID, path=ep_dir):
+    print("Listing files for endpoint:" + ENDPOINT_ID + " using default directory path: " + ep_dir)
+    flist = transfer_client.operation_ls(ENDPOINT_ID, path=ep_dir)
+    for fentry in flist:
+        print("file: " + json.dumps(fentry, indent=4, sort_keys=True))
+
+    # list a single file in the ep_dir
+    file_name = "test1.txt"
+    print("Listing single file for endpoint:" + ENDPOINT_ID + " directory: " + ep_dir + " file name: " + file_name)
+    flist = transfer_client.operation_ls(ENDPOINT_ID, path=ep_dir, filter={"name:"+file_name})
+    for fentry in flist:
+        print("file: " + json.dumps(fentry, indent=4, sort_keys=True))
+    # list a single dir in the ep_dir
+    dir_name = "test_dir"
+    print("Listing single dir for endpoint:" + ENDPOINT_ID + " directory: " + ep_dir + " dir name: " + dir_name)
+    flist = transfer_client.operation_ls(ENDPOINT_ID, path=ep_dir, filter={"name:"+dir_name}, limit=1)
+    for fentry in flist:
+        print("file: " + json.dumps(fentry, indent=4, sort_keys=True))
+    # attempt to list a non-existent file
+    file_name = "no_such_file.txt"
+    print("Attempting to list a non-existent file for endpoint:" + ENDPOINT_ID + " directory: " + ep_dir + " file name: " + file_name)
+    flist = transfer_client.operation_ls(ENDPOINT_ID, path=ep_dir, filter={"name:"+file_name})
+    print("Number of files: %" + len(flist))
+    for fentry in flist:
         print("file: " + json.dumps(fentry, indent=4, sort_keys=True))
 
 

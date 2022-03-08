@@ -1,0 +1,6 @@
+build
+.idea
+/tapis-documentation.iml
+/.venv/
+source/_build
+.vscode
