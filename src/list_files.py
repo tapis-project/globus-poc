@@ -96,7 +96,7 @@ def main():
     # List all endpoints
     print("My Endpoints:")
     for ep in transfer_client.endpoint_search(filter_scope="my-endpoints"):
-        print("[EndpintId: {}] DisplayName: {} Default dir: {}".format(ep["id"], ep["display_name"],
+        print("[EndpointId: {}] DisplayName: {} Default dir: {}".format(ep["id"], ep["display_name"],
                                                                        ep["default_directory"]))
 
     # Make call to get endpoint default dir
